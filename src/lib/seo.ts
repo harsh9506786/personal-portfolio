@@ -6,7 +6,7 @@ export function buildMetadata(): Metadata {
   return {
     metadataBase: new URL(siteConfig.url),
     title: {
-      default: siteConfig.title,
+      default: siteConfig.tabTitle,
       template: `%s | ${siteConfig.name}`,
     },
     description: siteConfig.description,

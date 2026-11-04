@@ -14,7 +14,9 @@ export const siteConfig = {
   jobTitle: "Freelance Full Stack, Mobile & AI Developer",
   url: (process.env.NEXT_PUBLIC_SITE_URL ?? "https://example.com").replace(/\/$/, ""),
   locale: "en_IN",
-  title: "Harshvardhan — Freelance Web, Mobile App & AI Developer",
+  title: "Harshvardhan | Web, App & AI Developer",
+  /** Text shown on the browser tab. */
+  tabTitle: "harshvardhan-portfolio",
   description:
     "Freelance developer building fast websites, mobile apps and AI-powered solutions for businesses and startups. Next.js, React, React Native, Flutter and LLM integrations.",
   keywords: [
