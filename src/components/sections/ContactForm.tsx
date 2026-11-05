@@ -3,9 +3,9 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { AlertCircle, CheckCircle2, LoaderCircle, Send } from "lucide-react";
 import { Select } from "@/components/ui/Select";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppButton";
 import { getWhatsAppUrl } from "@/lib/config";
 import {
-  BUDGETS,
   LIMITS,
   PROJECT_TYPES,
   validateContact,
@@ -19,7 +19,13 @@ type Status =
   | { state: "success" }
   | { state: "error"; message: string; offerFallback: boolean };
 
-const empty: ContactValues = { name: "", email: "", projectType: "", budget: "", details: "" };
+const empty: ContactValues = {
+  name: "",
+  email: "",
+  phone: "",
+  projectType: "",
+  details: "",
+};
 
 const fieldBase =
   "w-full rounded-2xl border-2 bg-paper px-4 py-3.5 text-base text-ink placeholder:text-mute-light transition-[border-color,box-shadow] duration-200 focus:border-ink focus:shadow-[3px_3px_0_0_var(--color-amber)] focus:outline-none aria-[invalid=true]:border-red-600";
@@ -44,7 +50,10 @@ export function ContactForm() {
 
   const id = (k: string) => `${uid}-${k}`;
 
-  function update<K extends keyof ContactValues>(key: K, value: ContactValues[K]) {
+  function update<K extends keyof ContactValues>(
+    key: K,
+    value: ContactValues[K],
+  ) {
     setValues((v) => ({ ...v, [key]: value }));
     if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
   }
@@ -62,7 +71,9 @@ export function ContactForm() {
     setErrors(found);
     const firstInvalid = (Object.keys(found) as (keyof ContactValues)[])[0];
     if (firstInvalid) {
-      formRef.current?.querySelector<HTMLElement>(`[name="${firstInvalid}"]`)?.focus();
+      formRef.current
+        ?.querySelector<HTMLElement>(`[name="${firstInvalid}"]`)
+        ?.focus();
       return;
     }
 
@@ -96,7 +107,8 @@ export function ContactForm() {
       if (body.code === "too_fast") {
         setStatus({
           state: "error",
-          message: "That was a little quick. Please give it a moment and press send again.",
+          message:
+            "That was a little quick. Please give it a moment and press send again.",
           offerFallback: false,
         });
         return;
@@ -120,13 +132,15 @@ export function ContactForm() {
       }
       setStatus({
         state: "error",
-        message: "Something went wrong and your message was not sent. Please try again, or message me on WhatsApp.",
+        message:
+          "Something went wrong and your message was not sent. Please try again, or message me on WhatsApp.",
         offerFallback: true,
       });
     } catch {
       setStatus({
         state: "error",
-        message: "Couldn't reach the server. Check your connection and try again.",
+        message:
+          "Couldn't reach the server. Check your connection and try again.",
         offerFallback: true,
       });
     }
@@ -140,10 +154,16 @@ export function ContactForm() {
         role="status"
         className="flex flex-col items-start gap-4 rounded-[2rem] border-2 border-ink bg-cream p-8 outline-none sm:p-10"
       >
-        <CheckCircle2 className="h-12 w-12 text-amber-deep" aria-hidden="true" />
-        <h3 className="font-display text-3xl font-extrabold tracking-tight">Message sent.</h3>
+        <CheckCircle2
+          className="h-12 w-12 text-amber-deep"
+          aria-hidden="true"
+        />
+        <h3 className="font-display text-3xl font-extrabold tracking-tight">
+          Message sent.
+        </h3>
         <p className="text-mute">
-          Thanks for reaching out. I&apos;ll read your message and get back to you by email.
+          Thanks for reaching out. I&apos;ll read your message and get back to
+          you by email.
         </p>
         <button
           type="button"
@@ -160,11 +180,15 @@ export function ContactForm() {
   }
 
   const submitting = status.state === "submitting";
-  const describedBy = (k: keyof ContactValues) => (errors[k] ? `${id(k)}-error` : undefined);
+  const describedBy = (k: keyof ContactValues) =>
+    errors[k] ? `${id(k)}-error` : undefined;
 
   const error = (k: keyof ContactValues) =>
     errors[k] ? (
-      <p id={`${id(k)}-error`} className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-red-700">
+      <p
+        id={`${id(k)}-error`}
+        className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-red-700"
+      >
         <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
         {errors[k]}
       </p>
@@ -225,53 +249,56 @@ export function ContactForm() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <div>
-          <label htmlFor={id("projectType")} className={label}>
-            Project Type
-          </label>
-          <Select
-            id={id("projectType")}
-            name="projectType"
-            value={values.projectType}
-            options={PROJECT_TYPES}
-            placeholder="Select a type…"
-            onChange={(v) => update("projectType", v)}
-            onBlur={() => validateField("projectType")}
-            invalid={Boolean(errors.projectType)}
-            describedBy={describedBy("projectType")}
-            className={fieldBase}
-          />
-          {error("projectType")}
-        </div>
-        <div>
-          <label htmlFor={id("budget")} className={label}>
-            Estimated Budget <span className="font-normal text-mute">(optional)</span>
-          </label>
-          <Select
-            id={id("budget")}
-            name="budget"
-            value={values.budget}
-            options={BUDGETS}
-            placeholder="Select a range…"
-            clearable
-            onChange={(v) => update("budget", v)}
-            invalid={Boolean(errors.budget)}
-            describedBy={describedBy("budget")}
-            className={fieldBase}
-          />
-          {error("budget")}
-        </div>
+      <div>
+        <label htmlFor={id("phone")} className={label}>
+          Contact Number
+        </label>
+        <input
+          id={id("phone")}
+          name="phone"
+          type="tel"
+          autoComplete="tel"
+          inputMode="tel"
+          required
+          maxLength={LIMITS.phone}
+          value={values.phone}
+          onChange={(e) => update("phone", e.target.value)}
+          onBlur={() => validateField("phone")}
+          aria-invalid={Boolean(errors.phone)}
+          aria-describedby={describedBy("phone")}
+          placeholder="+91 98765 43210"
+          className={fieldBase}
+        />
+        {error("phone")}
+      </div>
+
+      <div>
+        <label htmlFor={id("projectType")} className={label}>
+          Project Type
+        </label>
+        <Select
+          id={id("projectType")}
+          name="projectType"
+          value={values.projectType}
+          options={PROJECT_TYPES}
+          placeholder="Select a type…"
+          onChange={(v) => update("projectType", v)}
+          onBlur={() => validateField("projectType")}
+          invalid={Boolean(errors.projectType)}
+          describedBy={describedBy("projectType")}
+          className={fieldBase}
+        />
+        {error("projectType")}
       </div>
 
       <div>
         <label htmlFor={id("details")} className={label}>
-          Project Details
+          Project Details{" "}
+          <span className="font-normal text-mute">(optional)</span>
         </label>
         <textarea
           id={id("details")}
           name="details"
-          required
           rows={5}
           maxLength={LIMITS.details}
           value={values.details}
@@ -291,7 +318,10 @@ export function ContactForm() {
       </div>
 
       {/* Honeypot: invisible to people, tempting to bots */}
-      <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
+      <div
+        className="absolute -left-[9999px] h-0 w-0 overflow-hidden"
+        aria-hidden="true"
+      >
         <label htmlFor={id("company")}>Company (leave empty)</label>
         <input
           id={id("company")}
@@ -310,7 +340,10 @@ export function ContactForm() {
           className="rounded-2xl border-2 border-red-700 bg-red-50 p-4 text-sm font-medium text-red-900"
         >
           <p className="flex items-start gap-2">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <AlertCircle
+              className="mt-0.5 h-4 w-4 shrink-0"
+              aria-hidden="true"
+            />
             {status.message}
           </p>
           {status.offerFallback && (
@@ -326,23 +359,40 @@ export function ContactForm() {
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="group inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-full border-2 border-ink bg-amber px-7 font-display text-base font-bold shadow-[3px_3px_0_0_var(--color-ink)] transition-[transform,box-shadow] duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-ink)] active:translate-x-0 active:translate-y-0 active:shadow-[1px_1px_0_0_var(--color-ink)] disabled:pointer-events-none disabled:opacity-70 sm:w-auto"
-      >
-        {submitting ? (
-          <>
-            <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
-            Sending…
-          </>
-        ) : (
-          <>
-            Send Message
-            <Send className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
-          </>
-        )}
-      </button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="group inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-full border-2 border-ink bg-amber px-7 font-display text-base font-bold shadow-[3px_3px_0_0_var(--color-ink)] transition-[transform,box-shadow] duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-ink)] active:translate-x-0 active:translate-y-0 active:shadow-[1px_1px_0_0_var(--color-ink)] disabled:pointer-events-none disabled:opacity-70 sm:w-auto"
+        >
+          {submitting ? (
+            <>
+              <LoaderCircle
+                className="h-5 w-5 animate-spin"
+                aria-hidden="true"
+              />
+              Sending…
+            </>
+          ) : (
+            <>
+              Send Message
+              <Send
+                className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1"
+                aria-hidden="true"
+              />
+            </>
+          )}
+        </button>
+        <a
+          href={getWhatsAppUrl()}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group inline-flex min-h-14 w-full items-center justify-center gap-2.5 rounded-full border-2 border-ink px-6 font-display text-base font-bold transition-colors duration-300 hover:bg-ink hover:text-cream sm:w-auto"
+        >
+          <WhatsAppIcon className="h-5 w-5 text-wa" />
+          Chat on WhatsApp
+        </a>
+      </div>
     </form>
   );
 }

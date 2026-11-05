@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { siteConfig } from "@/lib/config";
 import { validateContact, type ContactValues } from "@/lib/validation";
 
 export const runtime = "nodejs";
@@ -6,12 +7,13 @@ export const runtime = "nodejs";
 /**
  * Contact form endpoint.
  *
- * Required environment variables (see .env.example):
- *   RESEND_API_KEY      API key from https://resend.com
- *   CONTACT_TO_EMAIL    Where enquiries should be delivered
- *   CONTACT_FROM_EMAIL  A sender on a domain verified in Resend
+ * Environment variables (see .env.example):
+ *   RESEND_API_KEY      REQUIRED. API key from https://resend.com
+ *   CONTACT_TO_EMAIL    Optional. Where enquiries are delivered (default: the contact email in lib/config.ts)
+ *   CONTACT_FROM_EMAIL  Optional. Sender address (default: Resend's onboarding@resend.dev, which can
+ *                       only deliver to the email you signed up to Resend with)
  *
- * If these are missing the route answers 503 `not_configured`, and the form says so
+ * Without RESEND_API_KEY the route answers 503 `not_configured`, and the form says so
  * honestly. It never pretends a message was sent.
  *
  * Spam protection: honeypot field, minimum-fill-time check, same-origin check, body-size
@@ -88,8 +90,8 @@ export async function POST(request: Request) {
   const values: ContactValues = {
     name: str(data.name),
     email: str(data.email),
+    phone: str(data.phone),
     projectType: str(data.projectType),
-    budget: str(data.budget),
     details: str(data.details),
   };
 
@@ -106,18 +108,18 @@ export async function POST(request: Request) {
   if (Object.keys(errors).length > 0) return json({ code: "invalid", errors }, 422);
 
   const apiKey = process.env.RESEND_API_KEY;
-  const to = process.env.CONTACT_TO_EMAIL;
-  const from = process.env.CONTACT_FROM_EMAIL;
-  if (!apiKey || !to || !from) return json({ code: "not_configured" }, 503);
+  const to = process.env.CONTACT_TO_EMAIL || siteConfig.contact.email;
+  const from = process.env.CONTACT_FROM_EMAIL || "Portfolio Contact <onboarding@resend.dev>";
+  if (!apiKey || !to) return json({ code: "not_configured" }, 503);
 
   const html = `
     <h2>New project enquiry</h2>
     <p><strong>Name:</strong> ${escapeHtml(values.name)}</p>
     <p><strong>Email:</strong> ${escapeHtml(values.email)}</p>
+    <p><strong>Contact number:</strong> ${escapeHtml(values.phone.trim() || "Not provided")}</p>
     <p><strong>Project type:</strong> ${escapeHtml(values.projectType)}</p>
-    <p><strong>Budget:</strong> ${escapeHtml(values.budget || "Not provided")}</p>
     <p><strong>Details:</strong></p>
-    <p style="white-space:pre-wrap">${escapeHtml(values.details)}</p>`;
+    <p style="white-space:pre-wrap">${escapeHtml(values.details.trim() || "No details provided")}</p>`;
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -131,9 +133,14 @@ export async function POST(request: Request) {
         html,
       }),
     });
-    if (!res.ok) return json({ code: "send_failed" }, 502);
+    if (!res.ok) {
+      // Visible in the host's function logs (Netlify: Logs → Functions) to debug delivery problems.
+      console.error("Resend rejected the email:", res.status, await res.text().catch(() => ""));
+      return json({ code: "send_failed" }, 502);
+    }
     return json({ code: "ok" }, 200);
-  } catch {
+  } catch (err) {
+    console.error("Could not reach Resend:", err);
     return json({ code: "send_failed" }, 502);
   }
 }
