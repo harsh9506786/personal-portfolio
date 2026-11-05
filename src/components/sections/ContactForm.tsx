@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, LoaderCircle, Send } from "lucide-react";
+import Image from "next/image";
+import { motion, useReducedMotion } from "motion/react";
+import { AlertCircle, LoaderCircle, Send } from "lucide-react";
 import { Select } from "@/components/ui/Select";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppButton";
 import { getWhatsAppUrl } from "@/lib/config";
@@ -32,6 +34,7 @@ const fieldBase =
 
 export function ContactForm() {
   const uid = useId();
+  const reduceMotion = useReducedMotion();
   const [values, setValues] = useState<ContactValues>(empty);
   const [errors, setErrors] = useState<ContactErrors>({});
   const [honeypot, setHoneypot] = useState("");
@@ -152,29 +155,48 @@ export function ContactForm() {
         ref={successRef}
         tabIndex={-1}
         role="status"
-        className="flex flex-col items-start gap-4 rounded-[2rem] border-2 border-ink bg-cream p-8 outline-none sm:p-10"
+        className="flex flex-col items-center overflow-hidden rounded-[2rem] border-2 border-ink bg-cream px-6 pt-6 pb-8 text-center outline-none sm:px-10"
       >
-        <CheckCircle2
-          className="h-12 w-12 text-amber-deep"
-          aria-hidden="true"
-        />
-        <h3 className="font-display text-3xl font-extrabold tracking-tight">
-          Message sent.
-        </h3>
-        <p className="text-mute">
-          Thanks for reaching out. I&apos;ll read your message and get back to
-          you by email.
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            setStatus({ state: "idle" });
-            startedAt.current = Date.now();
-          }}
-          className="mt-2 min-h-11 rounded-full border-2 border-ink px-5 font-display font-bold transition-colors hover:bg-ink hover:text-cream"
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 140 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 70, damping: 15 }}
+          className="w-56 sm:w-60"
         >
-          Send another message
-        </button>
+          <Image
+            src="/avatar/thumbsup-cutout.webp"
+            alt="Harshvardhan giving two thumbs up"
+            width={745}
+            height={1150}
+            sizes="240px"
+            priority
+            className="h-auto w-full"
+          />
+        </motion.div>
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          className="-mt-3 flex flex-col items-center gap-3"
+        >
+          <h3 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
+            Message sent!
+          </h3>
+          <p className="max-w-md text-base text-mute">
+            Your message was sent successfully. I&apos;ll reach out to you very
+            soon.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setStatus({ state: "idle" });
+              startedAt.current = Date.now();
+            }}
+            className="mt-2 min-h-11 rounded-full border-2 border-ink px-5 font-display font-bold transition-colors hover:bg-ink hover:text-cream"
+          >
+            Send another message
+          </button>
+        </motion.div>
       </div>
     );
   }
